@@ -1,8 +1,28 @@
 import subprocess
 import re
-import random
-from pprint import pprint
+from dataclasses import dataclass, field
 from time import sleep
+from enum import Enum
+
+
+class Piece(Enum):
+    Ryott = 'ryott'
+    Chowkidar = 'chowkidar'
+    Cuirassier = 'cuirassier'
+    Faujdar = 'faujdar'
+    Jazair = 'jazair'
+
+
+@dataclass(init=False)
+class Player:
+    kotla: tuple[int, int] = (-1, -1)
+    mirza: tuple[int, int] = (-1, -1)
+    pieces: list[tuple[int, int]] = field(default_factory=list)
+    score: int = -1
+
+
+WIDTH = 6
+HEIGHT = 6
 
 
 class Process:
@@ -52,10 +72,8 @@ class Process:
 
 
 def parse_grid(grid):
-    p1_kotla = None
-    p2_kotla = None
-    p1_pieces = []
-    p2_pieces = []
+    p1 = Player()
+    p2 = Player()
     for y, line in enumerate(grid[2:8]):
         line = iter(line)
         next(line)
@@ -64,15 +82,19 @@ def parse_grid(grid):
             assert next(line) == '|'
             kotla = next(line)
             if kotla == 'K':
-                p1_kotla = (x, y)
+                p1.kotla = (x, y)
             elif kotla == 'k':
-                p2_kotla = (x, y)
+                p2.kotla = (x, y)
             piece = next(line)
             if piece == '!':
-                p1_pieces.append((x, y))
+                p1.pieces.append((x, y))
             elif piece == '"':
-                p2_pieces.append((x, y))
-    return p1_kotla, p1_pieces, p2_kotla, p2_pieces
+                p2.pieces.append((x, y))
+            elif piece == '1':
+                p1.mirza = (x, y)
+            elif piece == '2':
+                p2.mirza = (x, y)
+    return p1, p2
 
 
 process = Process('Paper1_ALvl_2023_Python3_Pub_0.0.0.py')
