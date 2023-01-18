@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from time import sleep
 from enum import Enum
 
-
 class Piece(Enum):
     Ryott = 'ryott'
     Chowkidar = 'chowkidar'
@@ -31,6 +30,7 @@ moves = {
     Piece.Cuirassier: ((0, 2), (0, 1), (2, 1), (-2, 1)),
 }
 
+SEARCH_DEPTH = 4
 
 class Process:
     def __init__(self, filename, echo=True):
@@ -68,8 +68,8 @@ class Process:
             print(line, end='')
         return line
 
-    def write(self, data, delay=True):
-        if self.echo:
+    def write(self, data, delay=True, echo=None):
+        if (echo is None and self.echo) or echo:
             print(data)
         self.process.stdin.write(data)
         self.process.stdin.write('\n')
@@ -224,22 +224,49 @@ def minimax(p1: Player,
 
 process = Process('Paper1_ALvl_2023_Python3_Pub_0.0.0.py')
 
-grid = []
-for _ in range(9):
-    grid.append(process.readline())
-p1, p2 = parse_grid(grid)
+while True:
+    process.read_to("Player One\n")
+    process.readline()
+    player_1_queue = [Piece(name) for name in re.findall('\d\. ([a-z]+)', process.readline())]
+    process.read_to("offer: ")
+    player_1_queue_choice = input()
+    process.write(player_1_queue_choice, echo=False)
+    player_1_queue.append(
+        player_1_queue.pop(
+            int(player_1_queue_choice) - 1
+        )
+    )
+    process.read_to(': ')
+    process.write(input(), echo=False)
+    process.read_to(': ')
+    process.write(input(), echo=False)
+    player_1_score = int(re.match('New score: (\d+)', process.readline()).group(1))
 
-offer = process.readline()
-offer = Piece(re.match('Move option offer: (.+)\n', offer).group(1))
+    grid = []
+    for _ in range(9):
+        grid.append(process.readline())
+    p1, p2 = parse_grid(grid)
 
-player = 1 if process.readline() == 'Player One\n' else 2
-score = int(re.match('Score: (\d+)\n', process.readline()).group(1))
-queue = [Piece(name) for name in re.findall('\d\. ([a-z]+)', process.readline())]
+    offer = process.readline()
+    offer = Piece(re.match('Move option offer: (.+)\n', offer).group(1))
 
-process.readline()
-process.read_to(': ')
-process.write('1')
-process.read_to(': ')
-process.write('22')
-process.read_to(': ')
-process.write('32')
+    player = 1 if process.readline() == 'Player One\n' else 2
+    score = int(re.match('Score: (\d+)\n', process.readline()).group(1))
+    queue = [Piece(name) for name in re.findall('\d\. ([a-z]+)', process.readline())]
+
+    print("----- AI: Computing -----")
+    _, (queue_choice, from_position, to_position) = minimax(p1,
+                                                            p2,
+                                                            player_1_score,
+                                                            score,
+                                                            player_1_queue,
+                                                            queue,
+                                                            False,
+                                                            SEARCH_DEPTH
+                                                            )
+    process.read_to("the offer: ")
+    process.write(str(queue_choice + 1))
+    process.read_to(': ')
+    process.write(str(from_position[1] + 1) + str(from_position[0] + 1))
+    process.read_to(': ')
+    process.write(str(to_position[1] + 1) + str(to_position[0] + 1))
