@@ -115,7 +115,7 @@ def minimax(p1: Player,
     if depth == 0:
         return p1_score - p2_score, None
     if p1_turn:
-        max_score = float('inf')
+        max_score = float('-inf')
         best_move = None
         for queue_spot in range(3):  # 3
             new_move_queue = p1_move_queue.copy()
